@@ -1,0 +1,23 @@
+/*void kbc_asm_ih();*/
+/*using _C_LABEL() from <machine/asm.h>*/
+#include  <machine/asm.h>
+
+#include "8042.h"
+
+.intel_syntax
+
+.global _C_LABEL(code)
+.global _C_LABEL(kbc_asm_ih)
+.data
+
+.text
+_C_LABEL(kbc_asm_ih):
+          xor eax, eax //Variable that will contain a byte from the scancode
+          in al, OUT_BUF //input: ebx has now a byte from the scancode
+        /*mov bl, al
+          cmp bl, (PAR_ERR|TO_ERR)
+          jz noError
+          mov byte ptr _C_LABEL(code), 0
+          jmp Fim
+noError:*/  mov byte ptr _C_LABEL(code), al
+Fim:      ret
