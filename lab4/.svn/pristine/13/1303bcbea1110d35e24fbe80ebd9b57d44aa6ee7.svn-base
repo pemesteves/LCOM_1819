@@ -1,0 +1,189 @@
+#include <lcom/lcf.h>
+
+#include <stdint.h>
+#include <stdio.h>
+
+// Any header files included below this line should have been created by you
+#include "8042.h"
+#include "mouse.h"
+
+int main(int argc, char *argv[]) {
+  // sets the language of LCF messages (can be either EN-US or PT-PT)
+  lcf_set_language("EN-US");
+
+  // enables to log function invocations that are being "wrapped" by LCF
+  // [comment this out if you don't want/need/ it]
+  lcf_trace_calls("/home/lcom/labs/lab4/trace.txt");
+
+  // enables to save the output of printf function calls on a file
+  // [comment this out if you don't want/need it]
+  lcf_log_output("/home/lcom/labs/lab4/output.txt");
+
+  // handles control over to LCF
+  // [LCF handles command line arguments and invokes the right function]
+  if (lcf_start(argc, argv))
+    return 1;
+
+  // LCF clean up tasks
+  // [must be the last statement before return]
+  lcf_cleanup();
+
+  return 0;
+}
+
+int(mouse_test_packet)(uint32_t cnt) {
+  uint8_t irq_set = 4; //This is the number we use when we subscribe the interrupt of the mouse
+
+  if (enableDataReport()) {
+    return 1;
+  }
+
+  if (mouse_subscribe_int(&irq_set)) { //Subscribing mouse interrupts
+    return 1;
+  }
+
+  /*if (mouse_enable_data_reporting())
+    return 1;*/
+
+  //TODO implement enableStreamMode and delete last two lines of code
+
+  int ipc_status, r;
+  message msg;
+  struct packet pp;
+  uint8_t counter = 1;
+  uint8_t bytes[3];
+  //TODO create a function to send command 0xD4 and receive the ack
+
+  while (cnt > 0) { //Read the cnt number of packets from the mouse
+    if ((r = driver_receive(ANY, &msg, &ipc_status)) != 0) {
+      printf("driver_receive failed with: %d", r);
+      continue;
+    }
+    if (is_ipc_notify(ipc_status)) { /* received notification */
+      switch (_ENDPOINT_P(msg.m_source)) {
+        case HARDWARE:                             /* hardware interrupt notification */
+          if (msg.m_notify.interrupts & irq_set) { /* subscribed keyboard interrupt */
+            mouse_ih();
+            if ((mouseByte & BIT(3)) == 0 && counter == 1) {
+              continue;
+            }
+            else if (counter == 1) { //First byte received from the mouse
+              bytes[0] = mouseByte;
+              counter++;
+              continue;
+            }
+            else if (counter == 2) { //Second byte received from the mouse
+              bytes[1] = mouseByte;
+              counter++;
+              continue;
+            }
+            else {
+              bytes[2] = mouseByte;
+            }
+          }
+          break;
+        default:
+          break; /* no other notifications expected: do nothing */
+      }
+    }
+    pp.bytes[0] = bytes[0];
+    pp.bytes[1] = bytes[1];
+    pp.bytes[2] = bytes[2];
+    pp.rb = ((bytes[0] & RB) >> 1);
+    pp.mb = ((bytes[0] & MB) >> 2);
+    pp.lb = (bytes[0] & LB);
+    pp.delta_x = bytes[1];
+    pp.delta_y = bytes[2];
+    pp.x_ov = ((bytes[0] & X_OV) >> 6);
+    pp.y_ov = ((bytes[0] & Y_OV) >> 7);
+
+    mouse_print_packet(&pp);
+    cnt--;
+    counter = 1;
+  }
+
+  if (mouse_unsubscribe_int()) { //Unsubscribing mouse interrupts
+    return 1;
+  }
+  printf("unsubscribed\n");
+  if (disableDataReport()) //Disable mouse data report
+    return 1;
+
+  printf("fim");
+  return 0;
+}
+
+int(mouse_test_remote)(uint16_t period, uint8_t cnt) {
+  if (setRemoteMode())
+    return 1;
+
+  //uint8_t numPack = cnt;
+  uint8_t bytes[3];
+  struct packet pp;
+
+  while (cnt > 0) {
+    if (issueReadData())
+      return 1;
+
+    mouse_ih();
+
+    if ((mouseByte & BIT(3)) == 0) {
+      continue;
+    }
+    else{
+      bytes[0] = mouseByte;
+      bytes[1] = readMouseByte();
+      bytes[2] = readMouseByte();
+    }
+    
+    pp.bytes[0] = bytes[0];
+    pp.bytes[1] = bytes[1];
+    pp.bytes[2] = bytes[2];
+    pp.rb = ((bytes[0] & RB) >> 1);
+    pp.mb = ((bytes[0] & MB) >> 2);
+    pp.lb = (bytes[0] & LB);
+    pp.delta_x = bytes[1];
+    pp.delta_y = bytes[2];
+    pp.x_ov = ((bytes[0] & X_OV) >> 6);
+    pp.y_ov = ((bytes[0] & Y_OV) >> 7);
+    mouse_print_packet(&pp);
+    tickdelay(micros_to_ticks(period));
+    cnt--;
+  }
+  //return numPack;
+
+  return 0;
+}
+
+//Função para ler os scancodes do kbd através de pollings
+/*uint8_t readScanCode(){
+
+  uint32_t stat; //Status
+  uint32_t data; //Variable that will contain a byte from the scancode
+
+  while( 1 ) {
+
+   sys_inb_cnt(KBC_CMD_REG, &stat); assuming it returns OK
+   //KBC_CMD_REG = Status Register - 0x64
+    loop while 8042 output buffer is empty
+   if( stat & OBF ) {
+     sys_inb_cnt(OUT_BUF, &data); assuming it returns OK
+     if ( (stat & (PAR_ERR | TO_ERR)) == 0 ) //Verify if there is an error
+       return data;
+     else
+        return LARGEST_NUMBER;
+    }
+   tickdelay(micros_to_ticks(DELAY_US)); //In interrupts, this instruction won't be executed
+  }*/
+
+int(mouse_test_async)(uint8_t idle_time) {
+  /* To be completed */
+  printf("%s(%u): under construction\n", __func__, idle_time);
+  return 1;
+}
+
+int(mouse_test_gesture)() {
+  /* To be completed */
+  printf("%s: under construction\n", __func__);
+  return 1;
+}
