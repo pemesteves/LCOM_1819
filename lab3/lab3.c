@@ -1,8 +1,9 @@
 #include <lcom/lcf.h>
+#include <lcom/timer.h>
 
 #include "8042.h"
 #include "keyboard.h"
-#include "timer.c"
+#include "i8254.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -161,6 +162,11 @@ int(kbd_test_poll)() {
 
 
 int(kbd_test_timed_scan)(uint8_t n) {
+  if (n < 0) //Time is always positive
+    return 1; 
+  
+  //If n is 0, the interrupts will be subscribed and unsubscribe without being handled
+
   //The number we use to subscribe timer interrupts and keyboard interrupts has to be different
   uint8_t irq_set_time = 2; //This is the number we use when we subscribe the interrupt of the timer
   if (timer_subscribe_int(&irq_set_time)) //Subscribing timer interrupts

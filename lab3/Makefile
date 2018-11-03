@@ -1,6 +1,6 @@
 PROG=lab3 
 
-SRCS = lab3.c keyboard.c keyboard_asm.S
+SRCS = lab3.c keyboard.c keyboard_asm.S timer.c
 
 CPPFLAGS += -pedantic -DLAB3
 
