@@ -13,5 +13,6 @@ char *map; // the pixmap
 Sprite *create_sprite(const char *pic[], int x, int y, int xspeed, int yspeed);
 void destroy_sprite(Sprite *sp);
 int animate_sprite(Sprite *sp);
+int draw_sprite(Sprite *sp);
 //static int draw_sprite(Sprite *sp, char *base);
 //static int check_collision(Sprite *sp, char *base);

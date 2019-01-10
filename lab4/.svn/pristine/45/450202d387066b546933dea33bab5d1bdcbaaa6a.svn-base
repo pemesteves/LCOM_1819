@@ -1,6 +1,0 @@
-#pragma once
-
-int mouse_subscribe_int(uint8_t *bit_no); //Function that subscribes mouse interrupts
-
-int mouse_unsubscribe_int(); //Function that unsubscribes mouse interrupts
-

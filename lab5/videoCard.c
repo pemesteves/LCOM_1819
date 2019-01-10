@@ -16,25 +16,11 @@ static unsigned blueScreenMask;
 static char *video_mem;
 
 void *(vg_init)(uint16_t mode) {
-  lm_init(true);
   vbe_mode_info_t vmi_p;
 
-  //if (vbe_get_mode_info(mode, &vmi_p))
-  //return NULL;
   if (vbeGetModeInfo(mode, &vmi_p))
     return NULL;
 
-  struct reg86u reg86;
-  memset(&reg86, 0, sizeof(reg86));
-
-  reg86.u.b.intno = VC_INT;
-  reg86.u.w.ax = VBE_CALL | VBE_SET_MODE; // VBE call, function 02 -- set VBE mode
-  reg86.u.w.bx = BIT(14) | mode;          // set bit 14: linear framebuffer
-
-  if (sys_int86(&reg86) != OK) {
-    printf("set_vbe_mode: sys_int86() failed \n", mode);
-    return NULL;
-  }
   h_res = vmi_p.XResolution;
   v_res = vmi_p.YResolution;
   bits_per_pixel = vmi_p.BitsPerPixel;
@@ -59,20 +45,22 @@ void *(vg_init)(uint16_t mode) {
   if (video_mem == MAP_FAILED)
     panic("couldn’t map video memory");
 
+  struct reg86u reg86;
+  memset(&reg86, 0, sizeof(reg86));
+  reg86.u.w.ax = VBE_CALL | VBE_SET_MODE; // VBE call, function 02 -- set VBE mode
+  reg86.u.w.bx = BIT(14) | mode;          // set bit 14: linear framebuffer
+  reg86.u.b.intno = VC_INT;
+
+  if (sys_int86(&reg86) != OK) {
+    printf("set_vbe_mode: sys_int86() failed \n", mode);
+    return NULL;
+  }
+
   return video_mem;
 }
 
 int(vg_draw_hline)(uint16_t x, uint16_t y, uint16_t len, uint32_t color) {
-  /*char *tmp_mem = video_mem;
-  tmp_mem += (y * h_res + x) * numBytes;
-  uint8_t tmp_color = 0;*/
   while (len > 0) {
-    /* for (uint8_t i = 0; i < numBytes; i++) {
-
-      tmp_color = color >> 8 * i;
-      *tmp_mem = tmp_color;
-      tmp_mem++;
-    }*/
     drawPixel(x, y, color);
     x++;
     len--;
@@ -136,11 +124,13 @@ unsigned get_bits_per_pixel() {
   return bits_per_pixel;
 }
 
-char* get_video_mem(){
+char *get_video_mem() {
   return video_mem;
 }
 
 int vbeGetModeInfo(uint16_t mode, vbe_mode_info_t *vmi_p) {
+  if (lm_init(false) == NULL)
+    return 1;
   phys_bytes buf;
   struct reg86u r;
   memset(&r, 0, sizeof(r));
@@ -155,7 +145,7 @@ int vbeGetModeInfo(uint16_t mode, vbe_mode_info_t *vmi_p) {
   r.u.w.di = PB2OFF(buf);
   /*set the offset accordingly*/
   r.u.w.cx = mode;
-  r.u.b.intno = 0x10;
+  r.u.b.intno = VC_INT;
   if (sys_int86(&r) != OK) {
     return 1; /*call BIOS*/
   }
@@ -163,4 +153,35 @@ int vbeGetModeInfo(uint16_t mode, vbe_mode_info_t *vmi_p) {
   *vmi_p = *(vbe_mode_info_t *) (m.virt);
   lm_free(&m);
   return 0;
+}
+
+VbeInfoBlock *getControllerInfo() {
+
+  VbeInfoBlock *vInfo = NULL;
+  vInfo->VbeSignature[0] = 'V';
+  vInfo->VbeSignature[1] = 'B';
+  vInfo->VbeSignature[2] = 'E';
+  vInfo->VbeSignature[3] = '2';
+
+  phys_bytes buf;
+  struct reg86u r;
+  memset(&r, 0, sizeof(r));
+  mmap_t m;
+  lm_alloc(sizeof(VbeInfoBlock), &m); /*use liblm.a to initialize buf*/
+  buf = m.phys;
+  r.u.w.ax = VBE_CALL | VBE_CONTROL_INFO;
+  /*VBE get mode info*/
+  /*translate the buffer linear address to a far pointer*/
+  r.u.w.es = PB2BASE(buf);
+  /*set a segment base*/
+  r.u.w.di = PB2OFF(buf);
+  /*set the offset accordingly*/
+  r.u.b.intno = VC_INT;
+  if (sys_int86(&r) != OK) {
+    return NULL; /*call BIOS*/
+  }
+
+  vInfo = (VbeInfoBlock *) (m.virt);
+  lm_free(&m);
+  return vInfo;
 }
