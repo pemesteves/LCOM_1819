@@ -1,4 +1,4 @@
-# lcom1819-t4g08
+# LCOM_1819
 Lab classes and final project of LCOM course - MIEIC, FEUP
 
 ## Course Information
