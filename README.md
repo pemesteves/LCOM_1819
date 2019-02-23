@@ -3,7 +3,7 @@ Lab classes and final project of LCOM course - MIEIC, FEUP
 
 ## Course Information
 
-* All the course's information can be viewed [here](https://sigarra.up.pt/feup/pt/ucurr_geral.ficha_uc_view?pv_ocorrencia_id=419993).
+* All the course's information can be viewed [here](https://sigarra.up.pt/feup/en/ucurr_geral.ficha_uc_view?pv_ocorrencia_id=419993).
 * All the course's content including lectures' presentations, labs and lab handouts can be viewed [here](https://web.fe.up.pt/~pfs/aulas/lcom2018/).
 * The original repository used for grading can be viewed [here](https://redmine.fe.up.pt/projects/lcom1819-t4g08).
 
