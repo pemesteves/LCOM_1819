@@ -14,25 +14,25 @@ Lab classes and final project of LCOM course - MIEIC, FEUP
 
 Lab 2 - Timer
 ----------
-> Grade: ?/100
+> Grade: 100/100
 
 Lab 3 - Keyboard
 ----------
-> Grade: ?/100
+> Grade: 97/100
 
 Lab 4 - Mouse
 ----------
-> Grade: ?/100
+> Grade: 91/100
 
 Lab 5 - Graphics (VBE)
 ----------
-> Grade: ?/100
+> Grade: 84/100
 
 Project
 ----------
 
 **Run Rocky Run** <br>
-> Grade: ?/20 <br>
+> Grade: 17/20 <br>
 
 **Screenshots** <br> <br>
 <img src="https://github.com/pemesteves/lcom1819-t4g08/blob/master/proj/screenshots_jogo/menu_1.png" width="500"><br>
